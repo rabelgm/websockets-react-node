@@ -1,8 +1,9 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import reactLogo from "./assets/react.svg";
 
 import { w3cwebsocket as W3CWebSocket } from "websocket";
 import { useStore } from "./lib/createContext";
+import { RootStore } from "./main";
 
 function App() {
   return (
@@ -23,8 +24,7 @@ function App() {
 }
 
 const Count = () => {
-  const [count, setCount] = useStore((store) => store.count);
-
+  const [count, setCount] = useStore((store: RootStore) => store.count);
   const client = useRef<W3CWebSocket>();
 
   useEffect(() => {

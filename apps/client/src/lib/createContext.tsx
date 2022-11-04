@@ -1,35 +1,27 @@
-import React, {
+import {
   useRef,
   createContext,
   useContext,
-  useCallback,
   useSyncExternalStore,
   PropsWithChildren,
 } from "react";
 
-type UseStoreDataReturnType = ReturnType<typeof useStoreData>;
-export const StoreContext = createContext<UseStoreDataReturnType | null>(null);
+export const StoreContext = createContext(null);
 
-function useStoreData<T>(initialState: T): {
-  get: () => T;
-  set: (value: Partial<T>) => void;
-  subscribe: (callback: () => void) => () => void;
-} {
-  const store = useRef(initialState);
+export function createStore<T>(initalValue: T) {
+  let store = { ...initalValue };
+  const subscribers = new Set<() => void>();
+  const get = () => store;
 
-  const get = useCallback(() => store.current, []);
+  const set = (value: Partial<T>) => {
+    store = { ...store, ...value };
+    subscribers.forEach((callback) => callback());
+  };
 
-  const subscribers = useRef(new Set<() => void>());
-
-  const set = useCallback((value: Partial<T>) => {
-    store.current = { ...store.current, ...value };
-    subscribers.current.forEach((callback) => callback());
-  }, []);
-
-  const subscribe = useCallback((callback: () => void) => {
-    subscribers.current.add(callback);
-    return () => subscribers.current.delete(callback);
-  }, []);
+  const subscribe = (callback: () => void) => {
+    subscribers.add(callback);
+    return () => subscribers.delete(callback);
+  };
 
   return {
     get,
@@ -38,10 +30,12 @@ function useStoreData<T>(initialState: T): {
   };
 }
 
-export function useStore(
-  selector: (store) => any
-): [any, (value: Partial<any>) => void] {
-  const store = useContext(StoreContext);
+export function useStore<T, R>(
+  selector: (store: T) => R,
+  initialState?
+): [R, (value: Partial<T>) => void] {
+  const store: ReturnType<typeof createStore<T>> = useContext(StoreContext);
+
   if (!store) {
     throw new Error("Store not found");
   }
@@ -49,21 +43,22 @@ export function useStore(
   const state = useSyncExternalStore(
     store.subscribe,
     () => selector(store.get()),
-    () => selector(store.get())
+    () => selector(initialState ?? store.get())
   );
 
   return [state, store.set];
 }
 
-interface ContexProviderProps<T> extends PropsWithChildren {
-  initialData: T;
+interface StoreProviderProps extends PropsWithChildren {
+  store: ReturnType<typeof createStore>;
 }
-export function ContextProvider<T>(props: ContexProviderProps<T>) {
-  const { children, initialData } = props;
+export const StoreProvider = (props: StoreProviderProps) => {
+  const { children, store } = props;
+  const storeRef = useRef(store);
 
   return (
-    <StoreContext.Provider value={useStoreData<T>(initialData)}>
+    <StoreContext.Provider value={storeRef.current}>
       {children}
     </StoreContext.Provider>
   );
-}
+};
