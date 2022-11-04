@@ -16,6 +16,7 @@ function App() {
       </div>
       <h1>Vite + React</h1>
       <Count />
+      <Add />
       <p className="read-the-docs">
         Click on the Vite and React logos to learn more
       </p>
@@ -24,7 +25,17 @@ function App() {
 }
 
 const Count = () => {
-  const [count, setCount] = useStore((store: RootStore) => store.count);
+  const [count, _] = useStore((store: RootStore) => store.count);
+
+  return (
+    <div className="card">
+      <p>{count}</p>
+    </div>
+  );
+};
+
+const Add = () => {
+  const [_, setCount] = useStore((store: RootStore) => store.count);
   const client = useRef<W3CWebSocket>();
 
   useEffect(() => {
@@ -42,12 +53,7 @@ const Count = () => {
     };
   }, []);
 
-  return (
-    <div className="card">
-      <button onClick={() => client?.current?.send("add")}>ADD</button>
-      <p>{count}</p>
-    </div>
-  );
+  return <button onClick={() => client?.current?.send("add")}>ADD</button>;
 };
 
 export default App;
