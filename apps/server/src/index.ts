@@ -11,18 +11,16 @@ wss.on("connection", function connection(ws) {
     client.send(score);
   });
 
-  ws.on("message", function (data) {
-    console.log(data);
+  ws.on("message", function (message) {
+    console.log(message.toString());
     score++;
     wss.clients.forEach((client) => {
       client.send(score);
     });
   });
-});
 
-wss.on("close", function () {
-  wss.clients.forEach((client) => {
-    client.send("disconnected");
+  ws.on("close", function () {
+    console.log("stopping client interval");
   });
 });
 

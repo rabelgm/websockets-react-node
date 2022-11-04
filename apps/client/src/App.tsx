@@ -1,22 +1,10 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import reactLogo from "./assets/react.svg";
 
 import { w3cwebsocket as W3CWebSocket } from "websocket";
+import { useStore } from "./lib/createContext";
 
 function App() {
-  const [count, setCount] = useState(0);
-  const client = useRef<W3CWebSocket>();
-
-  useEffect(() => {
-    client.current = new W3CWebSocket("ws://localhost:4000");
-
-    return () => {
-      if (client.current !== null) {
-        client?.current?.close();
-      }
-    };
-  }, []);
-
   return (
     <div className="App">
       <div>
@@ -26,17 +14,40 @@ function App() {
         </a>
       </div>
       <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => client?.current?.send("add")}>ADD</button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
+      <Count />
       <p className="read-the-docs">
         Click on the Vite and React logos to learn more
       </p>
     </div>
   );
 }
+
+const Count = () => {
+  const [count, setCount] = useStore((store) => store.count);
+
+  const client = useRef<W3CWebSocket>();
+
+  useEffect(() => {
+    client.current = new W3CWebSocket("ws://localhost:4000");
+
+    client.current.onmessage = (message) => {
+      console.log(message);
+      setCount({ count: Number(message.data) });
+    };
+
+    return () => {
+      if (client.current !== null) {
+        client.current.close();
+      }
+    };
+  }, []);
+
+  return (
+    <div className="card">
+      <button onClick={() => client?.current?.send("add")}>ADD</button>
+      <p>{count}</p>
+    </div>
+  );
+};
 
 export default App;
