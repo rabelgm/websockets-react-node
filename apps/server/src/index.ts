@@ -7,15 +7,13 @@ const wss = new WebSocketServer({ server });
 let score = 0;
 
 wss.on("connection", function connection(ws) {
-  wss.clients.forEach((client) => {
-    client.send(score);
-  });
+  ws.send(JSON.stringify({ type: "INIT", payload: { count: score } }));
 
   ws.on("message", function (message) {
     console.log(message.toString());
     score++;
     wss.clients.forEach((client) => {
-      client.send(score);
+      client.send(JSON.stringify({ type: "add", payload: { count: score } }));
     });
   });
 

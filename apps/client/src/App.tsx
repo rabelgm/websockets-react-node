@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import reactLogo from "./assets/react.svg";
 
 import { w3cwebsocket as W3CWebSocket } from "websocket";
 import { useStore } from "./lib/createContext";
 import { RootStore } from "./main";
+import { useWebSocket, useWebsocketConnection } from "./lib/useWebsocket";
 
 function App() {
   return (
@@ -17,9 +18,9 @@ function App() {
       <h1>Vite + React</h1>
       <Count />
       <Add />
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
+      <div className="read-the-docs">
+        <Logs />
+      </div>
     </div>
   );
 }
@@ -36,24 +37,30 @@ const Count = () => {
 
 const Add = () => {
   const [_, setCount] = useStore((store: RootStore) => store.count);
-  const client = useRef<W3CWebSocket>();
+  const client = useWebsocketConnection();
 
-  useEffect(() => {
-    client.current = new W3CWebSocket("ws://localhost:4000");
+  useWebSocket("add", (data) => {
+    setCount({ ...data.payload });
+  });
 
-    client.current.onmessage = (message) => {
-      console.log(message);
-      setCount({ count: Number(message.data) });
-    };
+  return <button onClick={() => client?.send("add")}>ADD</button>;
+};
 
-    return () => {
-      if (client.current !== null) {
-        client.current.close();
-      }
-    };
-  }, []);
+const Logs = () => {
+  const [logs, setLogs] = useStore((store: RootStore) => store.logs);
 
-  return <button onClick={() => client?.current?.send("add")}>ADD</button>;
+  return (
+    <>
+      <ul>
+        {logs.map((log, index) => (
+          <li key={index}>{log}</li>
+        ))}
+      </ul>
+      <button onClick={() => setLogs({ logs: [...logs, `${Math.random()}`] })}>
+        Add Random Log
+      </button>
+    </>
+  );
 };
 
 export default App;
